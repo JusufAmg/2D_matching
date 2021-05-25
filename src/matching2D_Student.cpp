@@ -49,7 +49,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
         int k = 2; //best 2 matches
         vector<vector<cv::DMatch>> knn_matches;
         double t = (double)cv::getTickCount();
-        matcher->knnMatch(descSource, descRef, knn_matches, 2);
+        matcher->knnMatch(descSource, descRef, knn_matches, k);
         t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
         cout << " (KNN) with n=" << knn_matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << endl;
 
@@ -151,7 +151,7 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
 void detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
 {
     // Detector parameters
-    int blockSize = 2;     // for every pixel, a blockSize Ã blockSize neighborhood is considered
+    int blockSize = 2;     // for every pixel, a blockSize ÃÂÃÂ blockSize neighborhood is considered
     int apertureSize = 3;  // aperture parameter for Sobel operator (must be odd)
     int minResponse = 100; // minimum value for a corner in the 8bit scaled response matrix
     double k = 0.04;       // Harris parameter (see equation for details)
@@ -220,15 +220,16 @@ void detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis
 
 // Detect keypoints in image using the FAST, BRISK, ORB, AKAZE, SIFT keypoints Detectors
 void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &imgGray, std::string detectorType, bool bVis) {
-    int threshold = 30;// difference between intensity of the central pixel and pixels of a circle around this pixel
+    //int threshold = 30;// difference between intensity of the central pixel and pixels of a circle around this pixel
     cv::Ptr<cv::FeatureDetector> detector;
+
     if(detectorType.compare("FAST") == 0) {
-    bool bNMS = true;  // perform non-maxima suppression on keypoints
-    cv::FastFeatureDetector::DetectorType type = cv::FastFeatureDetector::TYPE_9_16; // TYPE_9_16, TYPE_7_12, TYPE_5_8
-    detector = cv::FastFeatureDetector::create(threshold, bNMS, type);
+        //bool bNMS = true;  // perform non-maxima suppression on keypoints
+        //cv::FastFeatureDetector::DetectorType type = cv::FastFeatureDetector::TYPE_9_16; // TYPE_9_16, TYPE_7_12, TYPE_5_8
+        detector = cv::FastFeatureDetector::create();
     } 
     else if(detectorType.compare("BRISK") == 0) {
-        detector = cv::BRISK::create(threshold);
+        detector = cv::BRISK::create();
     }
     else if(detectorType.compare("ORB") == 0) {
         detector = cv::ORB::create();
@@ -239,17 +240,18 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &imgGray, 
     else if(detectorType.compare("SIFT") == 0) {
         detector = cv::xfeatures2d::SIFT::create();
     }
+
     double t = (double)cv::getTickCount();
     detector->detect(imgGray, keypoints);
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-    std::cout << detectorType <<" with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << std::endl;
+    cout << detectorType <<" with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << std::endl;
 
     // visualize results
     if (bVis) {
         cv::Mat visImage = imgGray.clone();
-        cv::drawKeypoints(imgGray, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-        string windowName = "FAST Results";
+        string windowName = detectorType + "Results";
         cv::namedWindow(windowName, 6);
+        cv::drawKeypoints(imgGray, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
         imshow(windowName, visImage);
         cv::waitKey(0);
   }
