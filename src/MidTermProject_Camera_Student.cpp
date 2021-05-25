@@ -23,8 +23,10 @@ int main(int argc, const char *argv[])
 {
 
     /* INIT VARIABLES AND DATA STRUCTURES */
-    string dt= "SIFT";    //SHITOMASI,HARRIS, FAST, BRISK, ORB, AKAZE, SIFT
-    string dest= "BRISK"; // BRISK,BRIEF, ORB, FREAK, AKAZE, SIFT
+    string dt= "FAST";    //SHITOMASI,Harris, FAST, BRISK, ORB, AKAZE, SIFT
+    string dest= "SIFT"; // BRISK,BRIEF, ORB, FREAK, AKAZE, SIFT
+    double detection_time= 0;
+    double descriptor_time = 0;
     // data location
     string dataPath = "../";
 
@@ -71,7 +73,7 @@ int main(int argc, const char *argv[])
         }
 
         //// EOF STUDENT ASSIGNMENT
-        //cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
+        cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
 
         /* DETECT IMAGE KEYPOINTS */
 
@@ -96,6 +98,7 @@ int main(int argc, const char *argv[])
             detKeypointsModern(keypoints,imgGray,detectorType,false);
         }
         t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+        detection_time += t;
 
         //// EOF STUDENT ASSIGNMENT
 
@@ -128,12 +131,12 @@ int main(int argc, const char *argv[])
                 keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
             }
             cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-            //cout << " NOTE: Keypoints have been limited!" << endl;
+            cout << " NOTE: Keypoints have been limited!" << endl;
         }
 
         // push keypoints and descriptor for current frame to end of data buffer
         (dataBuffer.end() - 1)->keypoints = keypoints;
-        //cout << "#2 : DETECT KEYPOINTS done" << endl;
+        cout << "#2 : DETECT KEYPOINTS done" << endl;
 
         /* EXTRACT KEYPOINT DESCRIPTORS */
 
@@ -146,6 +149,7 @@ int main(int argc, const char *argv[])
         double T = (double)cv::getTickCount();
         descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
         T = ((double)cv::getTickCount() - T) / cv::getTickFrequency();
+        descriptor_time += T;
 
         //// EOF STUDENT ASSIGNMENT
 
@@ -162,7 +166,7 @@ int main(int argc, const char *argv[])
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
             string descriptorType = "DES_HOG"; // DES_BINARY, DES_HOG
-            string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+            string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
             //// STUDENT ASSIGNMENT
             //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
@@ -177,7 +181,7 @@ int main(int argc, const char *argv[])
             // store matches in current data frame
             (dataBuffer.end() - 1)->kptMatches = matches;
 
-            //cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
+            cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
             // visualize matches between current and previous image
             bVis = true;
@@ -193,11 +197,13 @@ int main(int argc, const char *argv[])
                 string windowName = "Matching keypoints between two camera images";
                 cv::namedWindow(windowName, 7);
                 cv::imshow(windowName, matchImg);
-                //cout << "Press key to continue to next image" << endl;
+                cout << "Press key to continue to next image" << endl;
                 cv::waitKey(0); // wait for key to be pressed
             }
             bVis = false;
         }
     }
+    //cout << "detector    " << detection_time  << "      descriptor   "  << descriptor_time  << "\n";
+
     return 0;
 }
